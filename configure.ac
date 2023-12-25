@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.71])
-AC_INIT([simulWaterHoseWall],[1.0.0],[dominiqu-jc@users.sourceforge.net])
+AC_INIT([simulWaterHoseWall],[1.0.2],[dominiqu-jc@users.sourceforge.net])
 AM_INIT_AUTOMAKE
 AC_CONFIG_SRCDIR([simulWaterHoseWall/main.c])
 AC_CONFIG_HEADERS([config.h])
