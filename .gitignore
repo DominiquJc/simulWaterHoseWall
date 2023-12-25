@@ -6,6 +6,7 @@ Makefile.in
 *.o
 *.backup
 *~
+*.tar.gz
 simulWaterHoseWall/simulWaterHoseWall
 autom4te.cache
 aclocal.m4
