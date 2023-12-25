@@ -1,0 +1,2 @@
+dist_doc_DATA = overview.odt
+EXTRA_DIST = internal_unit_discussion paradoxical_effect programming_-_iteration_algorithm thermal_study thermal_study.ods

@@ -1,0 +1,180 @@
+Synchronicity of input data
+results comparison
+					just calculated temperature of  	idem + 5 extra convergence iterations 	values from the previous iteration	idem + 5 extra convergence iterations
+					the shallower neighbor												
+					(fast algorithm)								(standard algorithm)
+					(res.1.2.0)				(res.1.2.0a5)				(res.1.2.1)				(res.1.2.1a5)
+
+flow:					8.5279382343578067e-06, 43.505376°	8.5279382343572951e-06, 43.505376°	8.5279382343582319e-06, 43.505376°	8.5279382343573002e-06, 43.505376°
+										0	-5116				+4252					+4252	-9317 (−5065)	51
+water temperature:			5.5997761144508808e-02, -61.246845°	5.5997761144528160e-02, -61.246845°	5.5997761144521173e-02, -61.246845°	5.5997761144528944e-02, -61.246845°
+										0	+19352				+12365					+12365	+7771 (+20136)	784
+middle deep temperature:		3.1183555086036689e-03, 162.113418°	3.1183555086053351e-03, 162.113418°	3.1183555086039360e-03, 162.113418°	3.1183555086054379e-03, 162.113418°
+										0	+16662				+2671					+2671	+15019 (+17690)	1028
+eighth deep temperature:		6.2914070079282888e-02, -146.425298°	6.2914070079297307e-02, -146.425298°	6.2914070079275936e-02, -146.425298°	6.2914070079298057e-02, -146.425298°
+										0	+14419				−6952					−6952	+22121 (+15169)	750
+pos hose1deep,av temperature:		3.0071918595788505e-01, -55.497821°	3.0071918595790742e-01, -55.497821°	3.0071918595787012e-01, -55.497821°	3.0071918595790953e-01, -55.497821°
+										0	+2237				−1493					−1493	+3941 (+2448)	211
+pos hose1deep,width-1 temperature:	3.5471091513029063e-01, -58.069325°	3.5471091513031194e-01, -58.069325°	3.5471091513026387e-01, -58.069325°	3.5471091513031439e-01, -58.069325°
+										0	+2131				−2676					−2676	+5052 (+2376)	245
+pos hose1deep,middle temperature:	3.3421545536218733e-01, -55.391520°	3.3421545536220848e-01, -55.391520°	3.3421545536216835e-01, -55.391520°	3.3421545536221076e-01, -55.391520°
+										0	+2115				−1898					−1898	+4241 (+2343)	228
+pos hose1deep,near hose temperature:	9.9478015657152224e-02, -54.521452°	9.9478015657175844e-02, -54.521452°	9.9478015657165172e-02, -54.521452°	9.9478015657176941e-02, -54.521452°
+										0	+23620				+12948					+12948	+11769 (+24717)	1097
+pos hose1deep/2,av temperature:		5.8009937655835297e-01, -27.584964°	5.8009937655836841e-01, -27.584964°	5.8009937655833799e-01, -27.584964°	5.8009937655837029e-01, -27.584964°
+										0	+1544				−1498					−1498	+3230 (+1732)	188
+
+The most precises solutions are not the fast algorithm, nor standard algorithm, but the fast algorithm with extra convergence iterations, and the standard algorithm with extra convergence iterations.
+Adding 5 extra convergence iterations to the fast algorithm costs 13% exec time in addition.
+
+
+Exec time
+- Fast algorithm / standard algorithm
+The first option saves about 1/4 of the second option exec time. There does not seem to be any time saving related to vector instructions.
+- Reuse of the difference of 2 neighbors in the line / recalculation of differences
+The second option save about 1/25 of first option exec time. It is more expensive to copy into memory than to recalculate a difference.
+
+
+***************************************************************************************************************************************
+Coding reuse the difference of 2 neighbors vs recalculate a difference
+
+double		*lineCP;	// current time line temperature pointer
+double		*linePP;	// previous time line temperature pointer
+double		*tempCP;	// current time cell temperature pointer
+double		*tempPP;	// previous time cell temperature pointer
+double		*tempCPLim;
+double		tempDelta;	// sum of diff between neighbors
+double		tempCurr;	// current time cell temperature
+double		corr;		// noted temperature correction
+int		begIx;
+
+- Reuse
+
+double		tempDelta0, tempDelta1;	// diff in the same line
+
+	tempDelta1 = lineCP[begIx] - lineCP[begIx -1];
+	for (tempCP = lineCP + begIx, tempCPLim = lineCP + descP->limIx, tempPP = linePP + begIx;
+			tempCP < tempCPLim;
+			tempCP++, tempPP++) {
+		tempDelta0 = tempDelta1;
+		tempCurr = *tempCP;
+		tempDelta1 = tempCP[1] - tempCurr;
+		tempDelta =	(- tempDelta0 + tempDelta1) 
+				+ ((tempCP[lShal] - tempCurr) + (tempCP[lDeep] - tempCurr)) 
+				+ ((*tempPP - tempCurr) * invEarthDiffusivity);
+		*tempCP = (tempDelta * tempEvolCoef4) + tempCurr;
+		corr = *tempCP - tempCurr;
+		convErr += (corr * corr);
+	}
+
+
+- Recalculate (a little faster)
+
+double		tempSv;		// current time left neighbor temperature, before update
+
+	tempSv = lineCP[begIx -1];
+	for (tempCP = lineCP + begIx, tempCPLim = lineCP + descP->limIx, tempPP = linePP + begIx;
+			tempCP < tempCPLim;
+			tempCP++, tempPP++) {
+		tempCurr = *tempCP;
+		tempDelta = 	((tempSv - tempCurr) + (tempCP[1] - tempCurr))
+				+ ((tempCP[lShal] - tempCurr) + (tempCP[lDeep] - tempCurr)) 
+				+ ((*tempPP - tempCurr) * invEarthDiffusivity);
+		*tempCP = (tempDelta * tempEvolCoef4) + tempCurr;
+		tempSv = tempCurr;
+		corr = *tempCP - tempCurr;
+		convErr += (corr * corr);
+	}
+
+
+***************************************************************************************************************************************
+Coding standard algorithm vs fast algorithm
+
+Pos		*hoseNeighborP;
+EarthLineDesc	*descP;
+double		*lineCP;	// current time line temperature pointer
+double		*linePP;	// previous time line temperature pointer
+double		*tempCP;	// current time cell temperature pointer
+double		*tempPP;	// previous time cell temperature pointer
+double		*tempCPLim;
+double		tempDelta;	// sum of diff between neighbors
+double		tempCurr;	// current time cell temperature
+double		tempSv;		// current time left neighbor temperature, before update
+double		corr;		// noted temperature correction
+int		begIx;
+
+- Standard algorithm
+
+double		*tempDeltaD0, *tempDeltaD1, *tempDeltaDf, *tempDeltaDP0, *tempDeltaDP1;
+
+	for (tempCP = tempCT - lineSz, tempCPLim = tempCP + width, tempDeltaDP1 = tempDeltaD1; 
+			tempCP < tempCPLim; 
+			tempCP++, tempDeltaDP1++) {
+		*tempDeltaDP1 = tempCP[lineSz] - *tempCP;
+	}
+	for (descP = earthLineDescT, lineCP = tempCT, linePP = tempPT; 
+			lineCP < lineCPLim; 
+			descP++, lineCP += lineSz, linePP += lineSz) {
+		tempDeltaDf = tempDeltaD0;	// free tempDeltaD0
+		tempDeltaD0 = tempDeltaD1;	// old tempDeltaD1 becomes tempDeltaD0
+		tempDeltaD1 = tempDeltaDf;	// new tempDeltaD1
+		if (lineCP >= lineCPMax)
+			// last line, with only 3 neighbors
+			// the fourth neighbors will be itself => no delta temperature
+			memset(tempDeltaD1, 0, width * sizeof(double));
+		else
+			for (tempCP = lineCP, tempCPLim = tempCP + width, tempDeltaDP1 = tempDeltaD1; 
+					tempCP < tempCPLim; 
+					tempCP++, tempDeltaDP1++) {
+				*tempDeltaDP1 = tempCP[lineSz] - *tempCP;
+			}
+		begIx = descP->begIx;
+		lineCP[width] = lineCP[width -1];	// extremum neighbor
+		lineCP[-1] = *lineCP;			// extremum neighbor
+		tempSv = lineCP[begIx -1];
+		for (tempCP = lineCP + begIx, tempCPLim = lineCP + descP->limIx, tempDeltaDP0 = tempDeltaD0 + begIx, tempDeltaDP1 = tempDeltaD1 + begIx, tempPP = linePP + begIx;
+				tempCP < tempCPLim;
+				tempCP++, tempDeltaDP0++, tempDeltaDP1++, tempPP++) {
+			tempCurr = *tempCP;
+			tempDelta = 	((tempSv - tempCurr) + (tempCP[1] - tempCurr)) 
+					+ (*tempDeltaDP1 - *tempDeltaDP0) 
+					+ ((*tempPP - tempCurr) * invEarthDiffusivity);
+			*tempCP = (tempDelta * tempEvolCoef4) + tempCurr;
+			tempSv = tempCurr;
+			corr = *tempCP - tempCurr;
+			convErr += (corr * corr);
+		}
+	}
+
+					
+- Fast algorithm
+
+	int	lShal = -(int)lineSz;	// shallower line offset
+	int	lDeep = lineSz;		// deeper line offset
+	for (descP = earthLineDescT, lineCP = tempCT, linePP = tempPT; 
+			lineCP < lineCPLim; 
+			descP++, lineCP += lineSz, linePP += lineSz) {
+		if (lineCP >= lineCPMax)
+			// last line, with only 3 neighbors
+			// the fourth neighbors will be itself => no delta temperature
+			lDeep = 0;
+		begIx = descP->begIx;
+		lineCP[width] = lineCP[width -1];	// extremum neighbor
+		lineCP[-1] = *lineCP;			// extremum neighbor
+		tempSv = lineCP[begIx -1];
+		for (tempCP = lineCP + begIx, tempCPLim = lineCP + descP->limIx, tempPP = linePP + begIx;
+				tempCP < tempCPLim;
+				tempCP++, tempPP++) {
+			tempCurr = *tempCP;
+			tempDelta = 	((tempSv - tempCurr) + (tempCP[1] - tempCurr)) 
+					+ ((tempCP[lShal] - tempCurr) + (tempCP[lDeep] - tempCurr)) 
+					+ ((*tempPP - tempCurr) * invEarthDiffusivity);
+			*tempCP = (tempDelta * tempEvolCoef4) + tempCurr;
+			tempSv = tempCurr;
+			corr = *tempCP - tempCurr;
+			convErr += (corr * corr);
+		}
+	}
+
+
+***************************************************************************************************************************************

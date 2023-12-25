@@ -1,0 +1,31 @@
+Hoses should increase the flow. I see the opposite.
+Proximity of 1st hose should increase phase shift. I see the opposite.
+
+Comparisons:
+period: one day
+deep: 2 m
+
+case					flow density				ratio		average temperature			phase 
+												at 1er hose deep			difference
+															
+without hose		(res.1.4)	8.8622691932290074e+00, 44.997396°	1		3.5188286961534931e-01, -59.839709°	0°
+
+1 hose, radius 6 mm	(res.1.3)	8.8658557327293082e+00, 44.913666°	1,000405	3.5129764767289179e-01, -59.973857°	−0,134148°
+
+5 hoses, radius 5 mm	(res.1.0)	8.6432931141408087e+00, 44.132054°	0,975291	3.1466218887929676e-01, -56.442246°	+3,397463°
+
+5 hoses, radius 6 mm	(res.1.1)	8.6322749847439688e+00, 44.039716°	0,974048	3.1234239848060308e-01, -56.310537°	+3,529172°
+
+6 hoses, radius 6 mm	(res.1.2)	8.5719598491963129e+00, 43.787294°	0,967242	3.0227294741013183e-01, -55.214111°	+4,625598
+
+
+Notes
+- The radius has little influence
+- The hoses number has a little more influence
+- Whether or not there are deep hoses has a lot influence
+
+
+Conclusion
+Yes, it's counterintuitive.
+It is low (3%).
+It depends on the layout of the hoses and the period.

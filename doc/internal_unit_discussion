@@ -1,0 +1,38 @@
+- Increase of length internal unit
+A doubling (2 mm instead of 1 mm) allows to gain a factor of 8 of exec time: This divides by 4 the cells number, and decreases the diffusivity (in internal unit), and then the iterations number.
+But there is a deterioration of precision in the order of half a per thousand.
+The shape of the hoses becomes caricatural!
+
+- Increase of time internal unit
+This increases proportionally the diffusivity (in internal unit), then non-linearly the number of iterations. 
+Except for little diffusivity, this increases weakly exec speed, because the increase in the number of convergence iterations compensates for the decrease in the number of simulated moments (this number = period / time internal unit).
+For little diffusivity, the increase in the number of iterations is moderate, which allows more speed gain.
+There is a deterioration of precision, in the order of 2 for 10⁵ (timeU=2) to 2 for 10⁴ (timeU=10).
+
+
+Results comparison
+					flow density				water temperature			average temperature at 1er hose deep
+					
+lengthU=0.001, timeU=1	(res.1.2)	8.5719598491963129e+00, 43.787294°	5.6292852353763662e-02, -60.973820°	3.0227294741013183e-01, -55.214111°
+
+lengthU=0.002, timeU=1	(res.2.1)	8.5723269069141850e+00, 43.784456°	5.6259996611937667e-02, -61.085581°	3.0239424718962221e-01, -55.217057°
+compared to res.1.2			1,000043 (error around 1/2 for 10⁴)	0,999416 (error around 1/2 for 10³)	1,000401 (error around 1/2 for 10³)
+
+lengthU=0.001, timeU=2	(res.2.2)	8.5719791830973708e+00, 43.786197°	5.6291858386122523e-02, -60.972861°	3.0226703541797373e-01, -55.213157°
+compared to res.1.2			1,000002				0,999982 (error around 2 for 10⁵)	0,999980 (error around 2 for 10⁵)
+
+lengthU=0.002, timeU=4	(res.2.3)	8.5723847444036405e+00, 43.781166°	5.6257006275188370e-02, -61.082700°	3.0237650676638028e-01, -55.214195°
+compared to res.2.1			1,000006 (error around 1/2 for 10⁵)	0,999947 (error around 1/2 for 10⁴)	0,999941 (error around 1/2 for 10⁴)
+
+lengthU=0.002, timeU=10	(res.2.4)	8.5725003582320642e+00, 43.774584°	5.6251027043763412e-02, -61.076936°	3.0234103381544764e-01, -55.208470°
+compared to res.2.1			1,000020 (error around 2 for 10⁵)	0,999841 (error around 2 for 10⁴)	0,999824 (error around 2 for 10⁴)
+
+
+
+exec time comparison
+
+lengthU=0.001, timeU=1		3:16:58	11818
+lengthU=0.002, timeU=1		0:24:31	1471	around 1/8
+lengthU=0.001, timeU=2		2:44:21	9861	around 0,8344
+lengthU=0.002, timeU=4		0:12:14 734	around 1/16
+lengthU=0.002, timeU=10		0:09:32 572	around 1/20
